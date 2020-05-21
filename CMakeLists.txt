@@ -3,4 +3,4 @@ project(OOP_Project)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(OOP_Project main.cpp MyAllocator.cpp MyAllocator.hpp)
+add_executable(OOP_Project main.cpp MyAllocator.hpp)
