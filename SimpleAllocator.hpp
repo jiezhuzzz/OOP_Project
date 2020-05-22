@@ -3,27 +3,38 @@
 
 #include <new>
 
+template<typename T>
 class SimpleAllocator
 {
 public:
-    static void *allocate(unsigned long n);
-    static void deallocate(void *p, unsigned long n);
+    typedef T value_type;
+    typedef T *pointer;
+    typedef unsigned long size_type;
+    typedef long difference_type;
+
+    // 配置空间，足以存储n个T对象
+    pointer allocate(size_type n, const void * = nullptr);
+
+    void deallocate(pointer buf, size_type);
 };
 
-void *SimpleAllocator::allocate(unsigned long n)
+template<typename T>
+typename SimpleAllocator<T>::pointer
+SimpleAllocator<T>::allocate(size_type n, const void *)
 {
-    void *room = std::malloc(n);
-    if (room == nullptr)
+    auto buf = pointer(::operator new(n * sizeof(value_type)));
+    if (buf == 0)
     {
         throw std::bad_alloc();
     }
-
-    return room;
+    return buf;
 }
 
-void SimpleAllocator::deallocate(void *p, unsigned long n)
+template<typename T>
+void SimpleAllocator<T>::deallocate(SimpleAllocator::pointer buf,
+                                    SimpleAllocator::size_type)
 {
-    std::free(p);
+    ::operator delete(buf);
 }
 
 
