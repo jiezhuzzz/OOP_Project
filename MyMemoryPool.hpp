@@ -1,0 +1,8 @@
+//
+// Created by 竺捷 on 2020/5/22.
+//
+
+#ifndef OOP_PROJECT_MYMEMORYPOOL_HPP
+#define OOP_PROJECT_MYMEMORYPOOL_HPP
+
+#endif //OOP_PROJECT_MYMEMORYPOOL_HPP
