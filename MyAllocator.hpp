@@ -1,6 +1,7 @@
 #ifndef OOP_PROJECT_MYALLOCATOR_HPP
 #define OOP_PROJECT_MYALLOCATOR_HPP
 
+#include "MyMemoryPool.hpp"
 #include <new>
 #include <iostream>
 
@@ -8,13 +9,15 @@ template<typename T>
 class MyAllocator
 {
 private:
+    MyMemoryPool<> myMemoryPool;
+    // 沿袭 STL 中的习惯
     typedef T value_type;
     typedef T *pointer;
     typedef const T *const_pointer;
     typedef T &reference;
     typedef const T &const_reference;
     typedef unsigned long size_type;
-    typedef int difference_type;
+    typedef long difference_type;
     template<class U>
     struct rebind
     {
@@ -26,8 +29,8 @@ public:
 
     MyAllocator(const MyAllocator &) = default; // 拷贝构造函数
 
-    template<typename U>
-    MyAllocator(const MyAllocator<U> &); // 泛化的拷贝构造函数
+    // template<typename U>
+    // MyAllocator(const MyAllocator<U> &); // 泛化的拷贝构造函数
 
     /******* 折构函数 *******/
     ~MyAllocator() = default;
@@ -38,7 +41,7 @@ public:
     const_pointer address(const_reference x) const; // 返回某个const对象的地址
 
     /******* 内存管理 *******/
-    pointer allocate(size_type n, const void * = 0); // 配置空间，足以存储n个T对象
+    pointer allocate(size_type n, const void * = nullptr); // 配置空间，足以存储n个T对象
 
     void deallocate(pointer p, size_type n); // 释放先前配置的空间
 
@@ -74,6 +77,26 @@ template<typename T>
 typename MyAllocator<T>::size_type MyAllocator<T>::maxsize() const
 {
     return size_type(UINT_MAX / sizeof(T));
+}
+
+template<typename T>
+void MyAllocator<T>::construct(MyAllocator::pointer p, const T &x)
+{
+    new(p) T(x);
+}
+
+template<typename T>
+typename MyAllocator<T>::pointer
+MyAllocator<T>::allocate(MyAllocator::size_type n, const void *)
+{
+    return (pointer) myMemoryPool.memory_allocate(n * sizeof(T));
+}
+
+template<typename T>
+void
+MyAllocator<T>::deallocate(MyAllocator::pointer p, MyAllocator::size_type n)
+{
+    myMemoryPool.memory_deallocate(p, n);
 }
 
 #endif //OOP_PROJECT_MYALLOCATOR_HPP
