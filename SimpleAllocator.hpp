@@ -8,33 +8,34 @@ class SimpleAllocator
 {
 public:
     typedef T value_type;
-    typedef T *pointer;
     typedef unsigned long size_type;
     typedef long difference_type;
+    typedef std::true_type propagate_on_container_move_assignment;
+    typedef std::true_type is_always_equal;
 
     // 配置空间，足以存储n个T对象
-    pointer allocate(size_type n, const void * = nullptr);
+    [[nodiscard]] constexpr T *allocate(size_type n);
 
-    void deallocate(pointer buf, size_type);
+    constexpr void deallocate(T *p, size_type n);
 };
 
 template<typename T>
-typename SimpleAllocator<T>::pointer
-SimpleAllocator<T>::allocate(size_type n, const void *)
+constexpr void SimpleAllocator<T>::deallocate(T *buf,
+                                              SimpleAllocator::size_type n)
 {
-    auto buf = pointer(::operator new(n * sizeof(value_type)));
+    ::operator delete(buf);
+}
+
+template<typename T>
+constexpr T *SimpleAllocator<T>::allocate(SimpleAllocator::size_type n)
+{
+    auto buf = (T *) (::operator new(n * sizeof(value_type)));
     if (buf == 0)
     {
         throw std::bad_alloc();
     }
-    return buf;
-}
 
-template<typename T>
-void SimpleAllocator<T>::deallocate(SimpleAllocator::pointer buf,
-                                    SimpleAllocator::size_type)
-{
-    ::operator delete(buf);
+    return buf;
 }
 
 
