@@ -54,7 +54,8 @@ constexpr void MyAllocator<T>::deallocate(T *p, MyAllocator::size_type n)
  *
  * @tparam T: object type
  * @param n: the number of objects to allocate storage for
- * @return
+ * @return Pointer to the first element of an array of n objects of type T
+ *          whose elements have not been constructed yet.
  */
 template<typename T>
 constexpr T *MyAllocator<T>::allocate(MyAllocator::size_type n)
