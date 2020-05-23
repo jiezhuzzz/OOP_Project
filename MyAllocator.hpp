@@ -18,30 +18,60 @@ private:
     typedef std::true_type is_always_equal;
 public:
     /******* 构造函数 *******/
-    MyAllocator() = default; //默认构造函数
+    //默认构造函数
+    constexpr MyAllocator() noexcept = default;
 
-    MyAllocator(const MyAllocator &) = default; // 拷贝构造函数
+    // 拷贝构造函数
+    constexpr MyAllocator(const MyAllocator &other) noexcept = default;
+
+    // 泛化构造函数
+    template<class U>
+    constexpr explicit MyAllocator(const MyAllocator<U> &other) noexcept;
 
     /******* 折构函数 *******/
-    ~MyAllocator() = default;
+    constexpr ~MyAllocator() = default;
 
     /******* 内存管理 *******/
-    T *allocate(size_type n, const void * = nullptr); // 配置空间，足以存储n个T对象
+    [[nodiscard]] constexpr T *allocate(size_type n); // 配置空间，足以存储n个T对象
 
-    void deallocate(T *p, size_type n); // 释放先前配置的空间
+    constexpr void deallocate(T *p, size_type n); // 释放先前配置的空间
 };
 
+/**
+ *
+ * @tparam T: object type
+ * @param p: pointer obtained from allocate()
+ * @param n: number of objects earlier passed to allocate()
+ * @return void
+ */
 template<typename T>
-T *MyAllocator<T>::allocate(MyAllocator::size_type n, const void *)
+constexpr void MyAllocator<T>::deallocate(T *p, MyAllocator::size_type n)
 {
+
+}
+
+/**
+ *
+ * @tparam T: object type
+ * @param n: the number of objects to allocate storage for
+ * @return
+ */
+template<typename T>
+constexpr T *MyAllocator<T>::allocate(MyAllocator::size_type n)
+{
+    if (std::numeric_limits<unsigned long>::max() / sizeof(T) < n)
+    {
+        throw std::bad_array_new_length();
+    }
+
     return nullptr;
 }
 
-template<typename T>
-void MyAllocator<T>::deallocate(T *p, MyAllocator::size_type n)
+template<class T1, class T2>
+constexpr bool
+operator==(const MyAllocator<T1> &lhs, const MyAllocator<T2> &rhs) noexcept
 {
-
+    return true;
 }
-
 
 #endif //OOP_PROJECT_MYALLOCATOR_HPP
