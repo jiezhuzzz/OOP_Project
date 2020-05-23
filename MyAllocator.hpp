@@ -10,93 +10,38 @@ class MyAllocator
 {
 private:
     MyMemoryPool<> myMemoryPool;
-    // 沿袭 STL 中的习惯
+    // 沿袭 STL 中的习惯，符合 C++ 20标准
     typedef T value_type;
-    typedef T *pointer;
-    typedef const T *const_pointer;
-    typedef T &reference;
-    typedef const T &const_reference;
     typedef unsigned long size_type;
     typedef long difference_type;
-    template<class U>
-    struct rebind
-    {
-        typedef MyAllocator<U> other;
-    };
+    typedef std::true_type propagate_on_container_move_assignment;
+    typedef std::true_type is_always_equal;
 public:
     /******* 构造函数 *******/
     MyAllocator() = default; //默认构造函数
 
     MyAllocator(const MyAllocator &) = default; // 拷贝构造函数
 
-    // template<typename U>
-    // MyAllocator(const MyAllocator<U> &); // 泛化的拷贝构造函数
-
     /******* 折构函数 *******/
     ~MyAllocator() = default;
 
-    /******* 获取对象地址 *******/
-    pointer address(reference x) const; // 返回某个对象的地址
-
-    const_pointer address(const_reference x) const; // 返回某个const对象的地址
-
     /******* 内存管理 *******/
-    pointer allocate(size_type n, const void * = nullptr); // 配置空间，足以存储n个T对象
+    T *allocate(size_type n, const void * = nullptr); // 配置空间，足以存储n个T对象
 
-    void deallocate(pointer p, size_type n); // 释放先前配置的空间
-
-    /******* 成功配置的最大量 *******/
-    [[nodiscard]] size_type maxsize() const;
-
-    /******* 调用对象的构造/折构函数 *******/
-    void construct(pointer p, const T &x);// 调用对象的构造函数
-
-    void destroy(pointer p); // 调用对象的析构函数
+    void deallocate(T *p, size_type n); // 释放先前配置的空间
 };
 
 template<typename T>
-void MyAllocator<T>::destroy(MyAllocator::pointer p)
+T *MyAllocator<T>::allocate(MyAllocator::size_type n, const void *)
 {
-    p->~T();
+    return nullptr;
 }
 
 template<typename T>
-typename MyAllocator<T>::pointer MyAllocator<T>::address(reference x) const
+void MyAllocator<T>::deallocate(T *p, MyAllocator::size_type n)
 {
-    return &x;
+
 }
 
-template<typename T>
-typename MyAllocator<T>::const_pointer
-MyAllocator<T>::address(const_reference x) const
-{
-    return &x;
-}
-
-template<typename T>
-typename MyAllocator<T>::size_type MyAllocator<T>::maxsize() const
-{
-    return size_type(UINT_MAX / sizeof(T));
-}
-
-template<typename T>
-void MyAllocator<T>::construct(MyAllocator::pointer p, const T &x)
-{
-    new(p) T(x);
-}
-
-template<typename T>
-typename MyAllocator<T>::pointer
-MyAllocator<T>::allocate(MyAllocator::size_type n, const void *)
-{
-    return (pointer) myMemoryPool.memory_allocate(n * sizeof(T));
-}
-
-template<typename T>
-void
-MyAllocator<T>::deallocate(MyAllocator::pointer p, MyAllocator::size_type n)
-{
-    myMemoryPool.memory_deallocate(p, n);
-}
 
 #endif //OOP_PROJECT_MYALLOCATOR_HPP
