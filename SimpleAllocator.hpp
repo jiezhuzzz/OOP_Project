@@ -16,7 +16,7 @@ public:
     // 配置空间，足以存储n个T对象
     [[nodiscard]] constexpr T *allocate(size_type n);
 
-    constexpr void deallocate(T *p, size_type n);
+    constexpr void deallocate(T *buf, size_type n);
 };
 
 template<typename T>
@@ -34,6 +34,9 @@ constexpr T *SimpleAllocator<T>::allocate(SimpleAllocator::size_type n)
     {
         throw std::bad_alloc();
     }
+//    std::cout << "n:" << n << ", "
+//              << "sizeof(T):" << sizeof(T) << ", "
+//              << "total size:" << n * sizeof(T) << std::endl;
 
     return buf;
 }

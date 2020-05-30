@@ -9,32 +9,27 @@ template<typename T>
 class MyAllocator
 {
 private:
-    MyMemoryPool<T, 16, 32> myMemoryPool;
-    // 沿袭 STL 中的习惯，符合 C++ 20标准
+    MyMemoryPool<T, 4, 20> myMemoryPool;
+public:
+    /******* STL Standard *******/
     typedef T value_type;
     typedef unsigned long size_type;
     typedef long difference_type;
     typedef std::true_type propagate_on_container_move_assignment;
     typedef std::true_type is_always_equal;
-public:
-    /******* 构造函数 *******/
-    //默认构造函数
-    constexpr MyAllocator() noexcept = default;
 
-    // 拷贝构造函数
-    constexpr MyAllocator(const MyAllocator &other) noexcept = default;
+    /******* Constructor *******/
+    MyAllocator() = default;
 
-    // 泛化构造函数
-    template<class U>
-    constexpr explicit MyAllocator(const MyAllocator<U> &other) noexcept;
-
-    /******* 折构函数 *******/
+    /******* Destructor *******/
     ~MyAllocator() = default;
 
-    /******* 内存管理 *******/
-    [[nodiscard]] constexpr T *allocate(size_type n); // 配置空间，足以存储n个T对象
+    /******* Memory Manage *******/
+    // Allocate space for n object
+    [[nodiscard]] constexpr T *allocate(unsigned long n);
 
-    constexpr void deallocate(T *p, size_type n); // 释放先前配置的空间
+    //Free space for n objects at address p
+    constexpr void deallocate(T *p, unsigned long n);
 };
 
 /**
@@ -45,7 +40,7 @@ public:
  * @return void
  */
 template<typename T>
-constexpr void MyAllocator<T>::deallocate(T *p, MyAllocator::size_type n)
+constexpr void MyAllocator<T>::deallocate(T *p, unsigned long n)
 {
     myMemoryPool.memory_deallocate(p, n);
 }
@@ -58,8 +53,9 @@ constexpr void MyAllocator<T>::deallocate(T *p, MyAllocator::size_type n)
  *          whose elements have not been constructed yet.
  */
 template<typename T>
-constexpr T *MyAllocator<T>::allocate(MyAllocator::size_type n)
+constexpr T *MyAllocator<T>::allocate(unsigned long n)
 {
+    // If there is no enough free space
     if (std::numeric_limits<unsigned long>::max() / sizeof(T) < n)
     {
         throw std::bad_array_new_length();
@@ -67,7 +63,14 @@ constexpr T *MyAllocator<T>::allocate(MyAllocator::size_type n)
 
     return myMemoryPool.memory_allocate(n);
 }
-
+/**
+ *
+ * @tparam T1
+ * @tparam T2
+ * @param lhs: default allocators to compare
+ * @param rhs: default allocators to compare
+ * @return true
+ */
 template<class T1, class T2>
 constexpr bool
 operator==(const MyAllocator<T1> &lhs, const MyAllocator<T2> &rhs) noexcept
