@@ -9,7 +9,7 @@ template<typename T>
 class MyAllocator
 {
 private:
-    MyMemoryPool<> myMemoryPool;
+    MyMemoryPool<T, 16, 32> myMemoryPool;
     // 沿袭 STL 中的习惯，符合 C++ 20标准
     typedef T value_type;
     typedef unsigned long size_type;
@@ -29,7 +29,7 @@ public:
     constexpr explicit MyAllocator(const MyAllocator<U> &other) noexcept;
 
     /******* 折构函数 *******/
-    constexpr ~MyAllocator() = default;
+    ~MyAllocator() = default;
 
     /******* 内存管理 *******/
     [[nodiscard]] constexpr T *allocate(size_type n); // 配置空间，足以存储n个T对象
@@ -47,7 +47,7 @@ public:
 template<typename T>
 constexpr void MyAllocator<T>::deallocate(T *p, MyAllocator::size_type n)
 {
-
+    myMemoryPool.memory_deallocate(p, n);
 }
 
 /**
@@ -65,7 +65,7 @@ constexpr T *MyAllocator<T>::allocate(MyAllocator::size_type n)
         throw std::bad_array_new_length();
     }
 
-    return nullptr;
+    return myMemoryPool.memory_allocate(n);
 }
 
 template<class T1, class T2>
