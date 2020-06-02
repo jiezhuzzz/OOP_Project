@@ -1,110 +1,85 @@
 #ifndef OOP_PROJECT_MYMEMORYPOOL_HPP
 #define OOP_PROJECT_MYMEMORYPOOL_HPP
-#define list_entry(ptr, type, member) ((type *)( (char *)(ptr) - (unsigned long)(&((type*)0)->member)))
 
-#include <array>
+#include "MyStack.hpp"
 #include <memory>
-
-// A linked list of free spaces
-struct FreeList
-{
-    // sizeof(unsigned char) = 1
-    // The length of data is the block size
-    unsigned char *data;
-
-    // Point to next Node
-    FreeList *next;
-
-    FreeList(unsigned long size, FreeList *next);
-};
-
-FreeList::FreeList(unsigned long size, FreeList *next)
-{
-    this->next = next;
-    this->data = (unsigned char *) ::operator new(size);
-}
+#include <array>
 
 /**
  * Choose *lower_bound* and *upper_bound* according to specific cases
- * @tparam T: data structure type
+ * @tparam block_num: the num of blocks in each chunk
  * @tparam lower_bound: allocate from (2^lower_bound) Bytes
  * @tparam upper_bound:          to (2^upper_bound) Bytes
  */
-template<typename T, unsigned int lower_bound, unsigned int upper_bound>
+template<unsigned int block_num, unsigned int lower_bound, unsigned int upper_bound>
 class MyMemoryPool
 {
 private:
     // Store the header node of all levels of FreeList
-    std::array<FreeList *, upper_bound - lower_bound + 1> memory_manager;
+    std::array<MyStack<void *>,
+            upper_bound - lower_bound + 1> memory_manager;
+
+    // Store the ptr to each chunk
+    MyStack<void *> chunks;
 
     // Find suitable array index by size
     [[nodiscard]] unsigned int which_index(unsigned long size);
 
 public:
-    MyMemoryPool();
+    MyMemoryPool() = default;
 
-    ~MyMemoryPool() = default;
+    ~MyMemoryPool();
 
-    T *memory_allocate(unsigned long n);
+    [[nodiscard]] void *memory_allocate(unsigned long size);
 
-    void memory_deallocate(T *p, unsigned long n);
+    void memory_deallocate(void *p, unsigned long size);
 };
 
-template<typename T, unsigned int lower_bound, unsigned int upper_bound>
-T *MyMemoryPool<T, lower_bound, upper_bound>::memory_allocate(unsigned long n)
+template<unsigned int block_num, unsigned int lower_bound, unsigned int upper_bound>
+void *
+MyMemoryPool<block_num, lower_bound, upper_bound>::memory_allocate(
+        unsigned long size)
 {
     // Find out the level of FreeList
-    unsigned int index = which_index(sizeof(T) * n);
+    unsigned int index = which_index(size);
 
     // If there is no Free Spaces，create one
-    if (memory_manager.at(index) == nullptr)
+    if (memory_manager.at(index).empty())
     {
-        memory_manager.at(index) = new FreeList(
-                (unsigned long) 2 << (index + lower_bound), nullptr);
+        // calculate the size
+        unsigned long data_size = (unsigned long) 1 << (index + lower_bound);
+
+        // store the address into chunks
+        chunks.push(::operator new(data_size * block_num));
+
+        for (int i = 0; i < block_num; ++i)
+        {
+            memory_manager.at(index).push(
+                    (void *) ((unsigned long) chunks.top() + i * data_size));
+        }
     }
-
-    FreeList *tmp = memory_manager.at(index);
-    memory_manager.at(index) = memory_manager.at(index)->next;
-
-    return (T *) tmp->data;
+    return memory_manager.at(index).pop_get();
 }
 
-template<typename T, unsigned int lower_bound, unsigned int upper_bound>
-MyMemoryPool<T, lower_bound, upper_bound>::MyMemoryPool()
-{
-    // Initialize memory_manager
-    memory_manager.fill(nullptr);
-}
-
-template<typename T, unsigned int lower_bound, unsigned int upper_bound>
-void MyMemoryPool<T, lower_bound, upper_bound>::memory_deallocate(T *p,
-                                                                  unsigned long n)
+template<unsigned int block_num, unsigned int lower_bound, unsigned int upper_bound>
+void
+MyMemoryPool<block_num, lower_bound, upper_bound>::memory_deallocate(void *p,
+                                                                     unsigned long size)
 {
     // Find out the level of FreeList
-    unsigned int index = which_index(sizeof(T) * n);
+    unsigned int index = which_index(size);
 
-    // Find the struct address corresponding to p
-    FreeList *node = list_entry(p, FreeList, data);
-
-    if (memory_manager.at(index) == nullptr)
-    {
-        memory_manager.at(index) = node;
-    }
-    else
-    {
-        FreeList *tmp = memory_manager.at(index)->next;
-        memory_manager.at(index) = node;
-        memory_manager.at(index)->next = tmp;
-    }
+    memory_manager.at(index).push(p);
 }
 
-template<typename T, unsigned int lower_bound, unsigned int upper_bound>
+template<unsigned int block_num, unsigned int lower_bound, unsigned int upper_bound>
 unsigned int
-MyMemoryPool<T, lower_bound, upper_bound>::which_index(unsigned long size)
+MyMemoryPool<block_num, lower_bound, upper_bound>::which_index(
+        unsigned long size)
 {
     // 2^(power - 1) < size <= 2^(power)
-    unsigned int power = 0;
-    while ((unsigned long) 2 << power < size)
+    unsigned int power = 1;
+    while ((unsigned long) 1 << power < size)
     {
         ++power;
     }
@@ -121,6 +96,15 @@ MyMemoryPool<T, lower_bound, upper_bound>::which_index(unsigned long size)
     }
     // return correct index
     return power - lower_bound;
+}
+
+template<unsigned int block_num, unsigned int lower_bound, unsigned int upper_bound>
+MyMemoryPool<block_num, lower_bound, upper_bound>::~MyMemoryPool()
+{
+    while (!chunks.empty())
+    {
+        ::operator delete(chunks.pop_get());
+    }
 }
 
 #endif //OOP_PROJECT_MYMEMORYPOOL_HPP

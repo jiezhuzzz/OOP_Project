@@ -5,11 +5,13 @@
 #include <new>
 #include <iostream>
 
+static MyMemoryPool<10, 4, 20> mmp;
+
 template<typename T>
 class MyAllocator
 {
 private:
-    MyMemoryPool<T, 4, 20> myMemoryPool;
+    MyMemoryPool<10, 4, 20> *myMemoryPool = &mmp;
 public:
     /******* STL Standard *******/
     typedef T value_type;
@@ -42,7 +44,7 @@ public:
 template<typename T>
 constexpr void MyAllocator<T>::deallocate(T *p, unsigned long n)
 {
-    myMemoryPool.memory_deallocate(p, n);
+    myMemoryPool->memory_deallocate((void *) p, n * sizeof(T));
 }
 
 /**
@@ -60,9 +62,9 @@ constexpr T *MyAllocator<T>::allocate(unsigned long n)
     {
         throw std::bad_array_new_length();
     }
-
-    return myMemoryPool.memory_allocate(n);
+    return (T *) myMemoryPool->memory_allocate(n * sizeof(T));
 }
+
 /**
  *
  * @tparam T1
