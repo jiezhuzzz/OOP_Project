@@ -13,7 +13,20 @@ const int PickSize = 1000;
 
 int main()
 {
+    /******* Test MyMemoryPool ******/
+    MyMemoryPool<10, 1, 4> test;
+    // Test if allocate is on sequence
+    int *a6 = (int *) test.memory_allocate(3 * sizeof(int));
+    int *b6 = (int *) test.memory_allocate(3 * sizeof(int));
+    int *c6 = (int *) test.memory_allocate(3 * sizeof(int));
+    int *d6 = (int *) test.memory_allocate(3 * sizeof(int));
+    std::cout << a6 << "  " << b6 << "  " << c6 << "  " << d6 << std::endl;
+    // Test deallocate
+    test.memory_deallocate(a6, 3 * sizeof(int));
+    // remove the comment to see the address
+//  std::cout << test.memory_manager.at(1).top() << std::endl;
 
+    /****** Test MyAllocator ******/
     // 产生 [1, TestSize) 的 int 型随机数
     std::random_device rd;
     std::mt19937 gen(rd());
